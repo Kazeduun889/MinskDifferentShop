@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Магазин BYN</title>
+    <!-- Подключаем скрипт Телеграма напрямую с их сервера -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        /* Стили прописаны прямо здесь, чтобы не было 404 ошибки */
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
+            background-color: var(--tg-theme-bg-color, #ffffff); 
+            color: var(--tg-theme-text-color, #000000); 
+            margin: 0; 
+            padding: 0; 
+        }
+        .container { padding: 15px; }
+        h1 { font-size: 22px; margin-bottom: 20px; text-align: center; }
+        .item { 
+            background-color: var(--tg-theme-secondary-bg-color, #f0f0f0);
+            border-radius: 12px; 
+            padding: 15px; 
+            margin-bottom: 12px; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        .info { display: flex; flex-direction: column; }
+        .name { font-weight: 600; font-size: 16px; margin-bottom: 5px;}
+        .price { font-weight: 400; color: var(--tg-theme-hint-color, #888); }
+        
+        .btn-add { 
+            background-color: var(--tg-theme-button-color, #2481cc); 
+            color: var(--tg-theme-button-text-color, #ffffff); 
+            border: none; 
+            padding: 10px 20px; 
+            border-radius: 8px; 
+            font-weight: 600;
+            cursor: pointer; 
+            transition: opacity 0.2s;
+        }
+        .btn-add:active { opacity: 0.8; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🇧🇾 Товары в BYN</h1>
+        <div id="list"></div>
+    </div>
+
+    <script>
+        // Инициализация
+        const tg = window.Telegram.WebApp;
+        tg.expand();
+
+        // Данные товаров (без картинок, чтобы не ломалось)
+        const products = [
+            { id: 1, name: "Футболка Минск", price: 45.00 },
+            { id: 2, name: "Худи Беларусь", price: 85.00 },
+            { id: 3, name: "Кружка Василёк", price: 20.00 },
+            { id: 4, name: "Стикерпак", price: 5.50 }
+        ];
+
+        const list = document.getElementById('list');
+        let cart = [];
+
+        // Функция отрисовки (безопасная)
+        function render() {
+            try {
+                products.forEach(item => {
+                    const div = document.createElement('div');
+                    div.className = 'item';
+                    div.innerHTML = `
+                        <div class="info">
+                            <span class="name">${item.name}</span>
+                            <span class="price">${item.price.toFixed(2)} BYN</span>
+                        </div>
+                        <button class="btn-add" id="btn-${item.id}">Добавить</button>
+                    `;
+                    list.appendChild(div);
+                    
+                    // Добавляем слушатель событий вручную
+                    document.getElementById(`btn-${item.id}`).addEventListener('click', () => addToCart(item));
+                });
+            } catch (e) {
+                alert("Ошибка отрисовки: " + e.message);
+            }
+        }
+
+        function addToCart(item) {
+            cart.push(item);
+            tg.HapticFeedback.impactOccurred('light'); // Вибрация при клике
+            updateMainButton();
+        }
+
+        function updateMainButton() {
+            if (cart.length > 0) {
+                const total = cart.reduce((sum, item) => sum + item.price, 0);
+                tg.MainButton.setText(`Оформить: ${total.toFixed(2)} BYN`);
+                tg.MainButton.show();
+            } else {
+                tg.MainButton.hide();
+            }
+        }
+
+        Telegram.WebApp.onEvent('mainButtonClicked', function(){
+            const data = {
+                products: cart,
+                totalPrice: cart.reduce((sum, item) => sum + item.price, 0)
+            };
+            tg.sendData(JSON.stringify(data)); 
+        });
+
+        // Запуск
+        render();
+    </script>
+</body>
+</html>
