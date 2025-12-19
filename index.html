@@ -3,217 +3,389 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Магазин v0.2</title>
+    <title>Shop v0.3</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
+        /* Основные стили и переменные */
         body { 
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
             background-color: var(--tg-theme-bg-color, #ffffff); 
             color: var(--tg-theme-text-color, #000000); 
             margin: 0; 
-            padding: 10px; 
-            user-select: none; /* Защита от выделения текста */
+            padding: 0; 
+            padding-bottom: 80px; /* Отступ под MainButton */
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
         }
 
-        h1 { font-size: 20px; font-weight: 800; margin: 10px 0 20px; text-align: center; }
+        /* --- ЛИПКАЯ ШАПКА (ПОИСК + КАТЕГОРИИ) --- */
+        .header {
+            position: sticky;
+            top: 0;
+            background-color: var(--tg-theme-bg-color, #ffffff);
+            z-index: 100;
+            padding: 10px 10px 0 10px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+        }
 
-        /* Сетка товаров (2 колонки) */
+        /* Поиск */
+        .search-container {
+            position: relative;
+            margin-bottom: 10px;
+        }
+        .search-input {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 10px 15px;
+            border-radius: 12px;
+            border: 1px solid var(--tg-theme-hint-color, #ccc);
+            background-color: var(--tg-theme-secondary-bg-color, #f5f5f5);
+            color: var(--tg-theme-text-color, #000);
+            font-size: 16px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .search-input:focus {
+            border-color: var(--tg-theme-button-color, #2481cc);
+        }
+
+        /* Категории (скролл по горизонтали) */
+        .tabs {
+            display: flex;
+            overflow-x: auto;
+            gap: 10px;
+            padding-bottom: 10px;
+            scrollbar-width: none; /* Скрыть скроллбар */
+        }
+        .tabs::-webkit-scrollbar { display: none; }
+
+        .tab {
+            white-space: nowrap;
+            padding: 8px 16px;
+            border-radius: 20px;
+            background-color: var(--tg-theme-secondary-bg-color, #f0f0f0);
+            color: var(--tg-theme-text-color, #000);
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 1px solid transparent;
+        }
+        .tab.active {
+            background-color: var(--tg-theme-button-color, #2481cc);
+            color: var(--tg-theme-button-text-color, #fff);
+        }
+
+        /* --- СЕТКА ТОВАРОВ --- */
         .product-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
-            gap: 10px;
+            gap: 12px;
+            padding: 15px;
         }
 
         .card {
-            background-color: var(--tg-theme-secondary-bg-color, #f5f5f5);
-            border-radius: 12px;
+            background-color: var(--tg-theme-secondary-bg-color, #fff);
+            border: 1px solid rgba(0,0,0,0.05);
+            border-radius: 14px;
             padding: 10px;
             display: flex;
             flex-direction: column;
             align-items: center;
             text-align: center;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-            transition: transform 0.1s;
+            position: relative;
         }
 
         .card img {
             width: 100%;
-            height: 100px;
-            object-fit: contain; /* Чтобы картинка не обрезалась */
-            margin-bottom: 10px;
-            border-radius: 8px;
+            height: 110px;
+            object-fit: cover;
+            border-radius: 10px;
+            margin-bottom: 8px;
         }
 
-        .name { font-size: 14px; font-weight: 600; margin-bottom: 5px; height: 34px; overflow: hidden; }
-        .price { font-size: 14px; color: var(--tg-theme-hint-color, #888); margin-bottom: 10px; }
+        .name { font-size: 14px; font-weight: 600; margin-bottom: 4px; line-height: 1.2; height: 34px; overflow: hidden; }
+        .price { font-size: 15px; font-weight: 700; color: var(--tg-theme-text-color, #000); margin-bottom: 10px; }
+        .currency { font-size: 12px; font-weight: 400; color: var(--tg-theme-hint-color, #888); }
 
-        /* Кнопка "Добавить" */
-        .btn-add {
-            background-color: var(--tg-theme-button-color, #2481cc);
-            color: var(--tg-theme-button-text-color, #ffffff);
-            border: none;
+        /* Кнопки управления */
+        .btn-add, .counter {
             width: 100%;
-            padding: 8px 0;
+            height: 36px;
             border-radius: 8px;
-            font-weight: 600;
-            font-size: 13px;
-            cursor: pointer;
-        }
-
-        /* Контроллер количества [ - 1 + ] */
-        .counter {
-            display: none; /* Скрыт по умолчанию */
-            width: 100%;
-            justify-content: space-between;
-            align-items: center;
-            background-color: var(--tg-theme-button-color, #2481cc);
-            border-radius: 8px;
-            padding: 2px;
-        }
-
-        .counter button {
-            background: transparent;
-            border: none;
-            color: white;
-            font-size: 18px;
-            width: 35px;
-            height: 30px;
-            cursor: pointer;
-        }
-        
-        .counter span {
-            color: white;
             font-weight: 600;
             font-size: 14px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: none;
+        }
+        .btn-add {
+            background-color: var(--tg-theme-button-color, #2481cc);
+            color: var(--tg-theme-button-text-color, #fff);
+        }
+        .counter {
+            background-color: var(--tg-theme-button-color, #2481cc);
+            color: white;
+            justify-content: space-between;
+            padding: 0 5px;
+            box-sizing: border-box;
+            display: none; /* Скрыто по умолчанию */
+        }
+        .counter button {
+            background: none; border: none; color: white; font-size: 20px; width: 30px; cursor: pointer;
         }
 
+        /* --- POPUP (МОДАЛЬНОЕ ОКНО) --- */
+        .popup-overlay {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 200;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(3px);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .popup-overlay.show { display: flex; opacity: 1; }
+
+        .popup-content {
+            background: var(--tg-theme-bg-color, #fff);
+            width: 85%;
+            max-width: 350px;
+            border-radius: 20px;
+            padding: 20px;
+            position: relative;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            transform: scale(0.9);
+            transition: transform 0.3s;
+        }
+        .popup-overlay.show .popup-content { transform: scale(1); }
+
+        .popup-close {
+            position: absolute; top: 10px; right: 10px;
+            background: var(--tg-theme-secondary-bg-color, #eee);
+            border: none; border-radius: 50%; width: 30px; height: 30px;
+            font-size: 18px; color: #555; cursor: pointer;
+        }
+        .popup-img { width: 100%; height: 200px; object-fit: cover; border-radius: 12px; margin-bottom: 15px; }
+        .popup-desc { font-size: 14px; color: var(--tg-theme-hint-color, #666); margin: 10px 0 20px; line-height: 1.5; }
+        
     </style>
 </head>
 <body>
 
-    <h1>🔥 Топ товары (BYN)</h1>
+    <!-- Шапка -->
+    <div class="header">
+        <div class="search-container">
+            <input type="text" id="searchInput" class="search-input" placeholder="🔍 Поиск товаров...">
+        </div>
+        <div class="tabs" id="categoryTabs">
+            <div class="tab active" onclick="filterCategory('all', this)">Все</div>
+            <div class="tab" onclick="filterCategory('clothes', this)">Одежда</div>
+            <div class="tab" onclick="filterCategory('souvenirs', this)">Сувениры</div>
+            <div class="tab" onclick="filterCategory('food', this)">Еда</div>
+        </div>
+    </div>
+
+    <!-- Сетка товаров -->
     <div id="grid" class="product-grid"></div>
+
+    <!-- Модальное окно (скрыто) -->
+    <div id="popup" class="popup-overlay" onclick="closePopup(event)">
+        <div class="popup-content">
+            <button class="popup-close" onclick="closePopupDirect()">×</button>
+            <img id="popupImg" class="popup-img" src="" alt="">
+            <h2 id="popupTitle" style="margin: 0 0 5px;"></h2>
+            <div id="popupPrice" style="font-weight: bold; font-size: 18px; margin-bottom: 10px;"></div>
+            <p id="popupDesc" class="popup-desc"></p>
+            <button class="btn-add" onclick="closePopupDirect()">Понятно</button>
+        </div>
+    </div>
 
     <script>
         const tg = window.Telegram.WebApp;
-        tg.expand(); // На весь экран
+        tg.expand();
 
-        // База товаров. 
-        // ВАЖНО: Картинки пока внешние (placeholder), чтобы не было ошибок 404.
+        // 📦 БАЗА ДАННЫХ
+        // Добавили поле category и description
         const products = [
-            { id: 1, name: "Футболка White", price: 45.00, img: "https://placehold.co/200x200/png?text=T-Shirt" },
-            { id: 2, name: "Кепка Black", price: 30.00, img: "https://placehold.co/200x200/png?text=Cap" },
-            { id: 3, name: "Худи Oversize", price: 95.00, img: "https://placehold.co/200x200/png?text=Hoodie" },
-            { id: 4, name: "Шоппер Eco", price: 15.00, img: "https://placehold.co/200x200/png?text=Bag" },
-            { id: 5, name: "Носки 'Бульба'", price: 9.50, img: "https://placehold.co/200x200/png?text=Socks" },
-            { id: 6, name: "Стикерпак", price: 5.00, img: "https://placehold.co/200x200/png?text=Stickers" }
+            { id: 1, category: "clothes", name: "Футболка Минск", price: 45.00, img: "https://placehold.co/400x400/png?text=Minsk", desc: "Стильная хлопковая футболка с принтом столицы. 100% хлопок." },
+            { id: 2, category: "clothes", name: "Худи Беларусь", price: 85.00, img: "https://placehold.co/400x400/png?text=Hoodie", desc: "Теплое худи с начесом. Идеально для белорусской осени." },
+            { id: 3, category: "souvenirs", name: "Кружка Василёк", price: 20.00, img: "https://placehold.co/400x400/png?text=Mug", desc: "Керамическая кружка с национальным орнаментом." },
+            { id: 4, category: "souvenirs", name: "Шоппер Льён", price: 15.00, img: "https://placehold.co/400x400/png?text=Shopper", desc: "Экологичная сумка из натурального льна." },
+            { id: 5, category: "food", name: "Чипсы Бульба", price: 3.50, img: "https://placehold.co/400x400/png?text=Chips", desc: "Легендарные белорусские чипсы пластинками." },
+            { id: 6, category: "clothes", name: "Кепка Менск", price: 30.00, img: "https://placehold.co/400x400/png?text=Cap", desc: "Черная кепка с вышивкой." },
+            { id: 7, category: "food", name: "Сгущенка", price: 4.20, img: "https://placehold.co/400x400/png?text=Milk", desc: "Та самая, глубокская или рогачевская — на выбор." }
         ];
 
-        // Корзина (храним тут id: количество)
-        let cart = {}; 
+        let cart = {};
+        let currentCategory = 'all';
 
         const grid = document.getElementById('grid');
+        const searchInput = document.getElementById('searchInput');
 
-        // Отрисовка
-        products.forEach(item => {
-            const div = document.createElement('div');
-            div.className = 'card';
-            div.innerHTML = `
-                <img src="${item.img}" alt="${item.name}">
-                <div class="name">${item.name}</div>
-                <div class="price">${item.price.toFixed(2)} BYN</div>
-                
-                <button class="btn-add" id="add-${item.id}" onclick="addItem(${item.id})">В корзину</button>
-                
-                <div class="counter" id="counter-${item.id}">
-                    <button onclick="minusItem(${item.id})">−</button>
-                    <span id="count-${item.id}">1</span>
-                    <button onclick="addItem(${item.id})">+</button>
-                </div>
-            `;
-            grid.appendChild(div);
-        });
-
-        // Логика добавления (+)
-        function addItem(id) {
-            tg.HapticFeedback.impactOccurred('light'); // Вибрация
+        // --- ЛОГИКА ОТРИСОВКИ ---
+        function render(items) {
+            grid.innerHTML = "";
             
-            if (!cart[id]) {
-                cart[id] = 1;
-                // Показать счетчик, скрыть кнопку "В корзину"
-                document.getElementById(`add-${id}`).style.display = 'none';
-                document.getElementById(`counter-${id}`).style.display = 'flex';
-            } else {
-                cart[id]++;
+            if(items.length === 0) {
+                grid.innerHTML = "<div style='grid-column: span 2; text-align: center; color: #888; margin-top: 20px;'>Ничего не найдено 😔</div>";
+                return;
             }
-            updateUI(id);
-            updateMainButton();
+
+            items.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'card';
+                div.innerHTML = `
+                    <img src="${item.img}" alt="${item.name}" onclick="openPopup(${item.id})">
+                    <div class="name">${item.name}</div>
+                    <div class="price">${item.price.toFixed(2)} <span class="currency">BYN</span></div>
+                    
+                    <button class="btn-add" id="add-${item.id}" onclick="updateCart(${item.id}, 1)">В корзину</button>
+                    
+                    <div class="counter" id="counter-${item.id}">
+                        <button onclick="updateCart(${item.id}, -1)">−</button>
+                        <span id="count-${item.id}">0</span>
+                        <button onclick="updateCart(${item.id}, 1)">+</button>
+                    </div>
+                `;
+                grid.appendChild(div);
+                
+                // Восстанавливаем состояние кнопки при перерисовке
+                if (cart[item.id]) {
+                    showCounter(item.id, cart[item.id]);
+                }
+            });
         }
 
-        // Логика убавления (-)
-        function minusItem(id) {
-            tg.HapticFeedback.impactOccurred('light'); // Вибрация
-            
-            if (cart[id] > 1) {
-                cart[id]--;
-            } else {
+        // --- ЛОГИКА КОРЗИНЫ ---
+        function updateCart(id, change) {
+            tg.HapticFeedback.impactOccurred('light');
+
+            if (!cart[id]) cart[id] = 0;
+            cart[id] += change;
+
+            if (cart[id] <= 0) {
                 delete cart[id];
-                // Вернуть кнопку "В корзину"
-                document.getElementById(`add-${id}`).style.display = 'block';
-                document.getElementById(`counter-${id}`).style.display = 'none';
+                hideCounter(id);
+            } else {
+                showCounter(id, cart[id]);
             }
-            updateUI(id);
             updateMainButton();
         }
 
-        // Обновление цифры на карточке
-        function updateUI(id) {
-            if (cart[id]) {
-                document.getElementById(`count-${id}`).innerText = cart[id];
+        function showCounter(id, count) {
+            const addBtn = document.getElementById(`add-${id}`);
+            const counter = document.getElementById(`counter-${id}`);
+            const countSpan = document.getElementById(`count-${id}`);
+            
+            if(addBtn && counter && countSpan) {
+                addBtn.style.display = 'none';
+                counter.style.display = 'flex';
+                countSpan.innerText = count;
             }
         }
 
-        // Главная кнопка внизу
+        function hideCounter(id) {
+            const addBtn = document.getElementById(`add-${id}`);
+            const counter = document.getElementById(`counter-${id}`);
+            
+            if(addBtn && counter) {
+                addBtn.style.display = 'flex';
+                counter.style.display = 'none';
+            }
+        }
+
+        // --- ФИЛЬТРЫ И ПОИСК ---
+        function filterCategory(cat, element) {
+            currentCategory = cat;
+            
+            // Визуальное переключение табов
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            if(element) element.classList.add('active');
+
+            applyFilters();
+        }
+
+        searchInput.addEventListener('input', applyFilters);
+
+        function applyFilters() {
+            const query = searchInput.value.toLowerCase();
+            
+            const filtered = products.filter(p => {
+                const matchesCategory = currentCategory === 'all' || p.category === currentCategory;
+                const matchesSearch = p.name.toLowerCase().includes(query);
+                return matchesCategory && matchesSearch;
+            });
+
+            render(filtered);
+        }
+
+        // --- POPUP (ОПИСАНИЕ) ---
+        function openPopup(id) {
+            const item = products.find(p => p.id === id);
+            if(!item) return;
+
+            document.getElementById('popupImg').src = item.img;
+            document.getElementById('popupTitle').innerText = item.name;
+            document.getElementById('popupPrice').innerText = item.price.toFixed(2) + " BYN";
+            document.getElementById('popupDesc').innerText = item.desc;
+            
+            const popup = document.getElementById('popup');
+            popup.classList.add('show');
+            document.body.style.overflow = 'hidden'; // Блокируем скролл фона
+        }
+
+        function closePopup(e) {
+            if (e.target === document.getElementById('popup')) {
+                closePopupDirect();
+            }
+        }
+        
+        function closePopupDirect() {
+            document.getElementById('popup').classList.remove('show');
+            document.body.style.overflow = '';
+        }
+
+        // --- ГЛАВНАЯ КНОПКА TELEGRAM ---
         function updateMainButton() {
             let totalSum = 0;
             let totalCount = 0;
 
             for (let id in cart) {
                 const product = products.find(p => p.id == id);
-                totalSum += product.price * cart[id];
-                totalCount += cart[id];
+                if(product) {
+                    totalSum += product.price * cart[id];
+                    totalCount += cart[id];
+                }
             }
 
             if (totalCount > 0) {
-                tg.MainButton.setText(`Купить ${totalCount} шт. за ${totalSum.toFixed(2)} BYN`);
+                tg.MainButton.setText(`Купить: ${totalSum.toFixed(2)} BYN`);
                 tg.MainButton.show();
             } else {
                 tg.MainButton.hide();
             }
         }
 
-        // Отправка данных боту
         Telegram.WebApp.onEvent('mainButtonClicked', function(){
-            const data = {
-                items: [],
-                totalPrice: 0
-            };
-
+            const data = { items: [], totalPrice: 0 };
             for (let id in cart) {
                 const product = products.find(p => p.id == id);
                 if (product) {
-                    data.items.push({ 
-                        id: product.id, 
-                        name: product.name, 
-                        price: product.price,
-                        quantity: cart[id]
-                    });
+                    data.items.push({ id: product.id, name: product.name, price: product.price, quantity: cart[id] });
                     data.totalPrice += product.price * cart[id];
                 }
             }
-            
             tg.sendData(JSON.stringify(data)); 
         });
+
+        // ПЕРВЫЙ ЗАПУСК
+        render(products);
+
     </script>
 </body>
 </html>
