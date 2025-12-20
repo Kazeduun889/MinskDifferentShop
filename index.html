@@ -3,72 +3,78 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Shop v0.3</title>
+    <title>Shop v0.5 BYN</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        /* Основные стили и переменные */
+        /* --- НАСТРОЙКИ СТИЛЕЙ --- */
         body { 
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
             background-color: var(--tg-theme-bg-color, #ffffff); 
             color: var(--tg-theme-text-color, #000000); 
             margin: 0; 
             padding: 0; 
-            padding-bottom: 80px; /* Отступ под MainButton */
             user-select: none;
             -webkit-tap-highlight-color: transparent;
         }
 
-        /* --- ЛИПКАЯ ШАПКА (ПОИСК + КАТЕГОРИИ) --- */
+        /* Контейнер для страниц */
+        .page {
+            display: none; /* Скрываем все страницы по умолчанию */
+            padding-bottom: 90px; /* Отступ под MainButton */
+            animation: fadeEffect 0.2s;
+        }
+        
+        .page.active {
+            display: block; /* Показываем активную */
+        }
+
+        @keyframes fadeEffect {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        /* --- ШАПКА (ПОИСК + ТАБЫ) --- */
         .header {
             position: sticky;
             top: 0;
             background-color: var(--tg-theme-bg-color, #ffffff);
             z-index: 100;
-            padding: 10px 10px 0 10px;
+            padding: 10px 10px 5px 10px;
             box-shadow: 0 4px 10px rgba(0,0,0,0.05);
         }
 
-        /* Поиск */
-        .search-container {
-            position: relative;
-            margin-bottom: 10px;
-        }
         .search-input {
             width: 100%;
             box-sizing: border-box;
             padding: 10px 15px;
             border-radius: 12px;
-            border: 1px solid var(--tg-theme-hint-color, #ccc);
-            background-color: var(--tg-theme-secondary-bg-color, #f5f5f5);
+            border: none;
+            background-color: var(--tg-theme-secondary-bg-color, #f0f0f0);
             color: var(--tg-theme-text-color, #000);
             font-size: 16px;
             outline: none;
-            transition: border-color 0.2s;
-        }
-        .search-input:focus {
-            border-color: var(--tg-theme-button-color, #2481cc);
+            margin-bottom: 10px;
         }
 
-        /* Категории (скролл по горизонтали) */
         .tabs {
             display: flex;
             overflow-x: auto;
-            gap: 10px;
-            padding-bottom: 10px;
-            scrollbar-width: none; /* Скрыть скроллбар */
+            gap: 8px;
+            padding-bottom: 5px;
+            scrollbar-width: none;
         }
         .tabs::-webkit-scrollbar { display: none; }
 
         .tab {
             white-space: nowrap;
-            padding: 8px 16px;
-            border-radius: 20px;
+            padding: 8px 14px;
+            border-radius: 18px;
             background-color: var(--tg-theme-secondary-bg-color, #f0f0f0);
-            color: var(--tg-theme-text-color, #000);
+            color: var(--tg-theme-hint-color, #888);
             font-size: 14px;
             font-weight: 500;
             cursor: pointer;
-            transition: all 0.2s;
+            transition: 0.2s;
             border: 1px solid transparent;
         }
         .tab.active {
@@ -80,38 +86,37 @@
         .product-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
-            gap: 12px;
-            padding: 15px;
+            gap: 10px;
+            padding: 10px;
         }
 
         .card {
-            background-color: var(--tg-theme-secondary-bg-color, #fff);
-            border: 1px solid rgba(0,0,0,0.05);
-            border-radius: 14px;
+            background-color: var(--tg-theme-bg-color, #fff);
+            border: 1px solid var(--tg-theme-secondary-bg-color, #e0e0e0);
+            border-radius: 12px;
             padding: 10px;
             display: flex;
             flex-direction: column;
             align-items: center;
             text-align: center;
-            position: relative;
         }
 
         .card img {
             width: 100%;
             height: 110px;
             object-fit: cover;
-            border-radius: 10px;
+            border-radius: 8px;
             margin-bottom: 8px;
         }
 
-        .name { font-size: 14px; font-weight: 600; margin-bottom: 4px; line-height: 1.2; height: 34px; overflow: hidden; }
-        .price { font-size: 15px; font-weight: 700; color: var(--tg-theme-text-color, #000); margin-bottom: 10px; }
-        .currency { font-size: 12px; font-weight: 400; color: var(--tg-theme-hint-color, #888); }
+        .name { font-size: 14px; font-weight: 600; margin-bottom: 4px; height: 34px; overflow: hidden; line-height: 1.2; }
+        .price { font-size: 15px; font-weight: 700; margin-bottom: 10px; }
+        .currency { font-size: 12px; font-weight: 400; color: #888; }
 
-        /* Кнопки управления */
+        /* Кнопки */
         .btn-add, .counter {
             width: 100%;
-            height: 36px;
+            height: 34px;
             border-radius: 8px;
             font-weight: 600;
             font-size: 14px;
@@ -122,22 +127,50 @@
             border: none;
         }
         .btn-add {
-            background-color: var(--tg-theme-button-color, #2481cc);
-            color: var(--tg-theme-button-text-color, #fff);
+            background-color: var(--tg-theme-secondary-bg-color, #eef);
+            color: var(--tg-theme-button-color, #2481cc);
         }
         .counter {
             background-color: var(--tg-theme-button-color, #2481cc);
             color: white;
             justify-content: space-between;
-            padding: 0 5px;
+            padding: 0 2px;
             box-sizing: border-box;
-            display: none; /* Скрыто по умолчанию */
+            display: none;
         }
         .counter button {
-            background: none; border: none; color: white; font-size: 20px; width: 30px; cursor: pointer;
+            background: none; border: none; color: white; font-size: 18px; width: 30px; cursor: pointer; height: 100%;
         }
 
-        /* --- POPUP (МОДАЛЬНОЕ ОКНО) --- */
+        /* --- СТРАНИЦА КОРЗИНЫ --- */
+        .cart-container { padding: 15px; }
+        .cart-header { font-size: 22px; font-weight: 800; margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px; }
+        
+        .cart-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--tg-theme-secondary-bg-color, #f0f0f0);
+        }
+        .cart-item img { width: 50px; height: 50px; border-radius: 8px; object-fit: cover; margin-right: 15px; }
+        .cart-info { flex-grow: 1; }
+        .cart-title { font-weight: 600; font-size: 15px; }
+        .cart-price { color: #888; font-size: 13px; }
+        
+        .cart-controls {
+            display: flex;
+            align-items: center;
+            background-color: var(--tg-theme-secondary-bg-color, #eee);
+            border-radius: 6px;
+            padding: 2px;
+        }
+        .cart-controls button {
+            border: none; background: none; color: var(--tg-theme-text-color); font-size: 16px; width: 25px; cursor: pointer;
+        }
+        .cart-controls span { font-weight: 600; font-size: 14px; margin: 0 5px; min-width: 15px; text-align: center;}
+
+        /* --- POPUP (МОДАЛКА) --- */
         .popup-overlay {
             position: fixed; top: 0; left: 0; right: 0; bottom: 0;
             background: rgba(0,0,0,0.5);
@@ -145,94 +178,90 @@
             display: none;
             justify-content: center;
             align-items: center;
-            backdrop-filter: blur(3px);
-            opacity: 0;
-            transition: opacity 0.3s;
+            backdrop-filter: blur(2px);
         }
-        .popup-overlay.show { display: flex; opacity: 1; }
-
+        .popup-overlay.show { display: flex; }
         .popup-content {
             background: var(--tg-theme-bg-color, #fff);
-            width: 85%;
-            max-width: 350px;
-            border-radius: 20px;
+            width: 80%;
+            max-width: 320px;
+            border-radius: 16px;
             padding: 20px;
             position: relative;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
-            transform: scale(0.9);
-            transition: transform 0.3s;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
         }
-        .popup-overlay.show .popup-content { transform: scale(1); }
+        .popup-close { position: absolute; top: 10px; right: 10px; background: #f0f0f0; border: none; border-radius: 50%; width: 25px; height: 25px; cursor: pointer; }
+        .popup-img { width: 100%; height: 180px; object-fit: cover; border-radius: 10px; margin-bottom: 10px; }
 
-        .popup-close {
-            position: absolute; top: 10px; right: 10px;
-            background: var(--tg-theme-secondary-bg-color, #eee);
-            border: none; border-radius: 50%; width: 30px; height: 30px;
-            font-size: 18px; color: #555; cursor: pointer;
-        }
-        .popup-img { width: 100%; height: 200px; object-fit: cover; border-radius: 12px; margin-bottom: 15px; }
-        .popup-desc { font-size: 14px; color: var(--tg-theme-hint-color, #666); margin: 10px 0 20px; line-height: 1.5; }
-        
     </style>
 </head>
 <body>
 
-    <!-- Шапка -->
-    <div class="header">
-        <div class="search-container">
+    <!-- СТРАНИЦА 1: КАТАЛОГ -->
+    <div id="catalogPage" class="page active">
+        <div class="header">
             <input type="text" id="searchInput" class="search-input" placeholder="🔍 Поиск товаров...">
+            <div class="tabs">
+                <div class="tab active" onclick="filterCategory('all', this)">Все</div>
+                <div class="tab" onclick="filterCategory('clothes', this)">Одежда</div>
+                <div class="tab" onclick="filterCategory('souvenirs', this)">Сувениры</div>
+                <div class="tab" onclick="filterCategory('food', this)">Еда</div>
+            </div>
         </div>
-        <div class="tabs" id="categoryTabs">
-            <div class="tab active" onclick="filterCategory('all', this)">Все</div>
-            <div class="tab" onclick="filterCategory('clothes', this)">Одежда</div>
-            <div class="tab" onclick="filterCategory('souvenirs', this)">Сувениры</div>
-            <div class="tab" onclick="filterCategory('food', this)">Еда</div>
+        <div id="grid" class="product-grid"></div>
+    </div>
+
+    <!-- СТРАНИЦА 2: КОРЗИНА -->
+    <div id="cartPage" class="page">
+        <div class="cart-container">
+            <div class="cart-header">Ваша корзина 🛒</div>
+            <div id="cartList"></div>
+            <div id="emptyCart" style="text-align: center; color: #888; margin-top: 40px; display: none;">
+                Корзина пуста 😔<br>Добавьте что-нибудь вкусное!
+            </div>
         </div>
     </div>
 
-    <!-- Сетка товаров -->
-    <div id="grid" class="product-grid"></div>
-
-    <!-- Модальное окно (скрыто) -->
+    <!-- POPUP -->
     <div id="popup" class="popup-overlay" onclick="closePopup(event)">
         <div class="popup-content">
             <button class="popup-close" onclick="closePopupDirect()">×</button>
-            <img id="popupImg" class="popup-img" src="" alt="">
-            <h2 id="popupTitle" style="margin: 0 0 5px;"></h2>
-            <div id="popupPrice" style="font-weight: bold; font-size: 18px; margin-bottom: 10px;"></div>
-            <p id="popupDesc" class="popup-desc"></p>
-            <button class="btn-add" onclick="closePopupDirect()">Понятно</button>
+            <img id="popupImg" class="popup-img" src="">
+            <h3 id="popupTitle" style="margin: 0 0 5px;"></h3>
+            <div id="popupPrice" style="font-weight: bold; margin-bottom: 10px;"></div>
+            <p id="popupDesc" style="font-size: 14px; color: #666;"></p>
+            <button class="btn-add" style="background: var(--tg-theme-button-color); color: #fff;" onclick="closePopupDirect()">Понятно</button>
         </div>
     </div>
 
     <script>
         const tg = window.Telegram.WebApp;
-        tg.expand();
+        tg.expand(); // Разворачиваем на весь экран
 
-        // 📦 БАЗА ДАННЫХ
-        // Добавили поле category и description
+        // --- ДАННЫЕ (ЗАМЕНИТЕ ССЫЛКИ НА СВОИ) ---
         const products = [
-            { id: 1, category: "clothes", name: "Футболка Минск", price: 45.00, img: "https://placehold.co/400x400/png?text=Minsk", desc: "Стильная хлопковая футболка с принтом столицы. 100% хлопок." },
-            { id: 2, category: "clothes", name: "Худи Беларусь", price: 85.00, img: "https://placehold.co/400x400/png?text=Hoodie", desc: "Теплое худи с начесом. Идеально для белорусской осени." },
-            { id: 3, category: "souvenirs", name: "Кружка Василёк", price: 20.00, img: "https://placehold.co/400x400/png?text=Mug", desc: "Керамическая кружка с национальным орнаментом." },
-            { id: 4, category: "souvenirs", name: "Шоппер Льён", price: 15.00, img: "https://placehold.co/400x400/png?text=Shopper", desc: "Экологичная сумка из натурального льна." },
-            { id: 5, category: "food", name: "Чипсы Бульба", price: 3.50, img: "https://placehold.co/400x400/png?text=Chips", desc: "Легендарные белорусские чипсы пластинками." },
-            { id: 6, category: "clothes", name: "Кепка Менск", price: 30.00, img: "https://placehold.co/400x400/png?text=Cap", desc: "Черная кепка с вышивкой." },
-            { id: 7, category: "food", name: "Сгущенка", price: 4.20, img: "https://placehold.co/400x400/png?text=Milk", desc: "Та самая, глубокская или рогачевская — на выбор." }
+            { id: 1, category: "clothes", name: "Футболка Минск", price: 45.00, img: "https://placehold.co/400x400/png?text=Minsk", desc: "Хлопок 100%, принт шелкография." },
+            { id: 2, category: "clothes", name: "Худи Беларусь", price: 85.00, img: "https://placehold.co/400x400/png?text=Hoodie", desc: "Теплый худи с начесом." },
+            { id: 3, category: "souvenirs", name: "Кружка Василёк", price: 20.00, img: "https://placehold.co/400x400/png?text=Mug", desc: "Керамика, 300 мл." },
+            { id: 4, category: "souvenirs", name: "Шоппер Лён", price: 15.00, img: "https://placehold.co/400x400/png?text=Shopper", desc: "Эко-сумка." },
+            { id: 5, category: "food", name: "Чипсы Бульба", price: 3.50, img: "https://placehold.co/400x400/png?text=Chips", desc: "Вкус сметаны и лука." },
+            { id: 6, category: "clothes", name: "Кепка Менск", price: 30.00, img: "https://placehold.co/400x400/png?text=Cap", desc: "Черная, регулируемый размер." },
+            { id: 7, category: "food", name: "Сгущенка", price: 4.50, img: "https://placehold.co/400x400/png?text=Milk", desc: "Глубокская классическая." }
         ];
 
-        let cart = {};
+        let cart = {}; // { id: quantity }
         let currentCategory = 'all';
+        let currentPage = 'catalog'; // catalog | cart
 
+        // --- ИНИЦИАЛИЗАЦИЯ ---
         const grid = document.getElementById('grid');
         const searchInput = document.getElementById('searchInput');
 
-        // --- ЛОГИКА ОТРИСОВКИ ---
-        function render(items) {
+        // Рендер каталога
+        function renderCatalog(items) {
             grid.innerHTML = "";
-            
-            if(items.length === 0) {
-                grid.innerHTML = "<div style='grid-column: span 2; text-align: center; color: #888; margin-top: 20px;'>Ничего не найдено 😔</div>";
+            if (items.length === 0) {
+                grid.innerHTML = "<div style='grid-column: span 2; text-align: center; padding: 20px; color: #888;'>Ничего не найдено</div>";
                 return;
             }
 
@@ -240,7 +269,7 @@
                 const div = document.createElement('div');
                 div.className = 'card';
                 div.innerHTML = `
-                    <img src="${item.img}" alt="${item.name}" onclick="openPopup(${item.id})">
+                    <img src="${item.img}" onclick="openPopup(${item.id})">
                     <div class="name">${item.name}</div>
                     <div class="price">${item.price.toFixed(2)} <span class="currency">BYN</span></div>
                     
@@ -254,34 +283,45 @@
                 `;
                 grid.appendChild(div);
                 
-                // Восстанавливаем состояние кнопки при перерисовке
+                // Восстанавливаем состояние кнопок
                 if (cart[item.id]) {
                     showCounter(item.id, cart[item.id]);
                 }
             });
         }
 
-        // --- ЛОГИКА КОРЗИНЫ ---
+        // --- ЛОГИКА КОРЗИНЫ (БЕЗОПАСНАЯ) ---
         function updateCart(id, change) {
             tg.HapticFeedback.impactOccurred('light');
 
-            if (!cart[id]) cart[id] = 0;
-            cart[id] += change;
+            const productId = parseInt(id);
+            const delta = parseInt(change);
 
-            if (cart[id] <= 0) {
-                delete cart[id];
-                hideCounter(id);
+            if (!cart[productId]) cart[productId] = 0;
+            cart[productId] += delta;
+
+            if (cart[productId] <= 0) {
+                delete cart[productId];
+                // Если мы в каталоге
+                hideCounter(productId); 
             } else {
-                showCounter(id, cart[id]);
+                // Если мы в каталоге
+                showCounter(productId, cart[productId]);
             }
+
+            // Если мы находимся на странице корзины, перерисовываем её сразу
+            if (currentPage === 'cart') {
+                renderCartPage();
+            }
+
             updateMainButton();
         }
 
+        // Вспомогательные функции UI
         function showCounter(id, count) {
             const addBtn = document.getElementById(`add-${id}`);
             const counter = document.getElementById(`counter-${id}`);
             const countSpan = document.getElementById(`count-${id}`);
-            
             if(addBtn && counter && countSpan) {
                 addBtn.style.display = 'none';
                 counter.style.display = 'flex';
@@ -292,65 +332,76 @@
         function hideCounter(id) {
             const addBtn = document.getElementById(`add-${id}`);
             const counter = document.getElementById(`counter-${id}`);
-            
             if(addBtn && counter) {
                 addBtn.style.display = 'flex';
                 counter.style.display = 'none';
             }
         }
 
-        // --- ФИЛЬТРЫ И ПОИСК ---
-        function filterCategory(cat, element) {
-            currentCategory = cat;
+        // --- СТРАНИЦА КОРЗИНЫ ---
+        function renderCartPage() {
+            const list = document.getElementById('cartList');
+            const emptyMsg = document.getElementById('emptyCart');
+            list.innerHTML = "";
             
-            // Визуальное переключение табов
-            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-            if(element) element.classList.add('active');
+            const itemIds = Object.keys(cart);
 
-            applyFilters();
-        }
-
-        searchInput.addEventListener('input', applyFilters);
-
-        function applyFilters() {
-            const query = searchInput.value.toLowerCase();
-            
-            const filtered = products.filter(p => {
-                const matchesCategory = currentCategory === 'all' || p.category === currentCategory;
-                const matchesSearch = p.name.toLowerCase().includes(query);
-                return matchesCategory && matchesSearch;
-            });
-
-            render(filtered);
-        }
-
-        // --- POPUP (ОПИСАНИЕ) ---
-        function openPopup(id) {
-            const item = products.find(p => p.id === id);
-            if(!item) return;
-
-            document.getElementById('popupImg').src = item.img;
-            document.getElementById('popupTitle').innerText = item.name;
-            document.getElementById('popupPrice').innerText = item.price.toFixed(2) + " BYN";
-            document.getElementById('popupDesc').innerText = item.desc;
-            
-            const popup = document.getElementById('popup');
-            popup.classList.add('show');
-            document.body.style.overflow = 'hidden'; // Блокируем скролл фона
-        }
-
-        function closePopup(e) {
-            if (e.target === document.getElementById('popup')) {
-                closePopupDirect();
+            if (itemIds.length === 0) {
+                emptyMsg.style.display = 'block';
+                return;
+            } else {
+                emptyMsg.style.display = 'none';
             }
-        }
-        
-        function closePopupDirect() {
-            document.getElementById('popup').classList.remove('show');
-            document.body.style.overflow = '';
+
+            itemIds.forEach(id => {
+                const product = products.find(p => p.id == id);
+                if (product) {
+                    const div = document.createElement('div');
+                    div.className = 'cart-item';
+                    div.innerHTML = `
+                        <img src="${product.img}">
+                        <div class="cart-info">
+                            <div class="cart-title">${product.name}</div>
+                            <div class="cart-price">${product.price.toFixed(2)} BYN</div>
+                        </div>
+                        <div class="cart-controls">
+                            <button onclick="updateCart(${product.id}, -1)">−</button>
+                            <span>${cart[id]}</span>
+                            <button onclick="updateCart(${product.id}, 1)">+</button>
+                        </div>
+                    `;
+                    list.appendChild(div);
+                }
+            });
         }
 
-        // --- ГЛАВНАЯ КНОПКА TELEGRAM ---
+        // --- НАВИГАЦИЯ ---
+        function togglePage(pageName) {
+            currentPage = pageName;
+            const catalog = document.getElementById('catalogPage');
+            const cartPage = document.getElementById('cartPage');
+
+            if (pageName === 'cart') {
+                renderCartPage();
+                catalog.classList.remove('active');
+                cartPage.classList.add('active');
+                tg.BackButton.show(); // Показать стрелку назад
+            } else {
+                cartPage.classList.remove('active');
+                catalog.classList.add('active');
+                // Обновляем счетчики в каталоге, так как они могли измениться в корзине
+                applyFilters(); 
+                tg.BackButton.hide(); // Скрыть стрелку назад
+            }
+            updateMainButton();
+        }
+
+        // Обработка кнопки "Назад" в Telegram
+        tg.onEvent('backButtonClicked', function() {
+            togglePage('catalog');
+        });
+
+        // --- ГЛАВНАЯ КНОПКА (SMART BUTTON) ---
         function updateMainButton() {
             let totalSum = 0;
             let totalCount = 0;
@@ -364,27 +415,77 @@
             }
 
             if (totalCount > 0) {
-                tg.MainButton.setText(`Купить: ${totalSum.toFixed(2)} BYN`);
-                tg.MainButton.show();
+                if (currentPage === 'catalog') {
+                    tg.MainButton.setText(`Перейти в корзину (${totalSum.toFixed(2)} BYN)`);
+                    tg.MainButton.show();
+                } else {
+                    tg.MainButton.setText(`Оформить заказ: ${totalSum.toFixed(2)} BYN`);
+                    tg.MainButton.show();
+                }
             } else {
                 tg.MainButton.hide();
             }
         }
 
+        // Нажатие на ГЛАВНУЮ КНОПКУ
         Telegram.WebApp.onEvent('mainButtonClicked', function(){
-            const data = { items: [], totalPrice: 0 };
-            for (let id in cart) {
-                const product = products.find(p => p.id == id);
-                if (product) {
-                    data.items.push({ id: product.id, name: product.name, price: product.price, quantity: cart[id] });
-                    data.totalPrice += product.price * cart[id];
+            if (currentPage === 'catalog') {
+                // Если мы в каталоге -> идем в корзину
+                togglePage('cart');
+            } else {
+                // Если мы в корзине -> отправляем заказ боту
+                const data = { items: [], totalPrice: 0 };
+                for (let id in cart) {
+                    const product = products.find(p => p.id == id);
+                    if (product) {
+                        data.items.push({ 
+                            name: product.name, 
+                            price: product.price, 
+                            quantity: cart[id],
+                            sum: (product.price * cart[id]).toFixed(2)
+                        });
+                        data.totalPrice += product.price * cart[id];
+                    }
                 }
+                tg.sendData(JSON.stringify(data)); 
             }
-            tg.sendData(JSON.stringify(data)); 
         });
 
-        // ПЕРВЫЙ ЗАПУСК
-        render(products);
+        // --- ПОИСК И ФИЛЬТРЫ ---
+        function filterCategory(cat, element) {
+            currentCategory = cat;
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            if(element) element.classList.add('active');
+            applyFilters();
+        }
+        
+        searchInput.addEventListener('input', applyFilters);
+
+        function applyFilters() {
+            const query = searchInput.value.toLowerCase();
+            const filtered = products.filter(p => {
+                const matchesCategory = currentCategory === 'all' || p.category === currentCategory;
+                const matchesSearch = p.name.toLowerCase().includes(query);
+                return matchesCategory && matchesSearch;
+            });
+            renderCatalog(filtered);
+        }
+
+        // --- POPUP ---
+        function openPopup(id) {
+            const item = products.find(p => p.id === id);
+            if(!item) return;
+            document.getElementById('popupImg').src = item.img;
+            document.getElementById('popupTitle').innerText = item.name;
+            document.getElementById('popupPrice').innerText = item.price.toFixed(2) + " BYN";
+            document.getElementById('popupDesc').innerText = item.desc;
+            document.getElementById('popup').classList.add('show');
+        }
+        function closePopup(e) { if(e.target === document.getElementById('popup')) closePopupDirect(); }
+        function closePopupDirect() { document.getElementById('popup').classList.remove('show'); }
+
+        // ЗАПУСК
+        renderCatalog(products);
 
     </script>
 </body>
